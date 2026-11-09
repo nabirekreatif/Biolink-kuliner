@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Acc Cell WebApp — Design System "Acc Cell Premium Retail" (Stitch)
+   Bio Link WebApp — Design System "Natural Pro" (Stitch)
    Modern premium ala iBox · amber logo · mobile-first, rapi di desktop
    © Nabire Kreatif — template berlisensi
    ========================================================================== */
@@ -817,3 +817,9 @@ body.no-bnav .cartbar, html.no-bnav .cartbar { bottom: calc(var(--nk-h, 0px) + v
 .open-st { font-size: 11px; height: 22px; vertical-align: 2px; margin-left: 4px; }
 .open-st .mi { font-size: 14px; }
 @media (prefers-reduced-motion: reduce) { .cartbar, .bump { animation: none; } }
+
+/* tombol X pada lembar tanpa judul (zoom gambar, dll) */
+.sheet { position: relative; }
+.sheet-x { position: absolute; top: 10px; right: 10px; z-index: 3; width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(15, 15, 15, .72); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, .25); }
+.sheet-x .mi { color: #fff; font-size: 22px; }
+.sheet-x:hover { background: rgba(15, 15, 15, .88); }

@@ -7,7 +7,7 @@
   'use strict';
   const A = window.App, { esc, I, rp, img, cabNama, hp08 } = A;
   const S = () => (A.pub && A.pub.settings) || {};
-  const logo = () => S().logo_url ? img(S().logo_url, 300) : 'assets/logo.png';
+  const logo = () => S().logo_url ? img(S().logo_url, 300) : A.base + 'assets/logo.png';
   const ya = v => String(v).toUpperCase() === 'YA' || v === true;
   const T = A.T, ON = A.on_;
   const toko = () => S().nama_toko || (window.ACC_CONFIG || {}).NAMA_USAHA || 'Bio Link';
@@ -150,7 +150,9 @@
 
   /* ---------- Pop-up promo ---------- */
   let popupShown = false;
+  document.addEventListener('acc:fresh', () => { if (A.cur === 'bio') maybePopup(); });
   function maybePopup() {
+    if (A.gas && !A.pubFresh) return;                  // jangan tampilkan pop-up dari data cache lama
     const s = S();
     if (popupShown || !ya(s.popup_aktif) || A.cur !== 'bio') return;
     if (s.popup_frekuensi !== 'setiap_buka' && A.Store.ss('popup:' + hashP(s)) === '1') return;
@@ -161,7 +163,7 @@
       const o = A.sheet((gambar ? '<img class="popup-img" src="' + esc(img(gambar, 800)) + '" alt="">' : '') +
         '<h3 style="font:800 20px/26px var(--f-head);margin-top:14px">' + esc(s.popup_judul || 'Promo') + '</h3>' + (s.popup_teks ? '<p class="muted" style="margin:6px 0 0;line-height:20px">' + esc(s.popup_teks) + '</p>' : '') +
         '<div class="row mt16"><button class="btn btn-ghost" data-x>Nanti saja</button><a class="btn btn-amber grow" data-go href="' + esc(tujuan(s.popup_tombol_tujuan, 'katalog')) + '"' + (/^https?:/.test(tujuan(s.popup_tombol_tujuan, 'katalog')) ? ' target="_blank" rel="noopener"' : '') + '>' + esc(s.popup_tombol_teks || 'Lihat') + I('arrow_forward') + '</a></div>',
-        { center: true, onClose: () => A.Store.ss('popup:' + hashP(s), '1') });
+        { center: true, noX: true, onClose: () => A.Store.ss('popup:' + hashP(s), '1') });
       o.querySelector('[data-go]').addEventListener('click', () => { A.Store.ss('popup:' + hashP(s), '1'); o.remove(); });
       o.querySelector('.sheet').insertAdjacentHTML('afterbegin', '<button class="icon-btn popup-x" data-x aria-label="Tutup">' + I('close') + '</button>');
     }, 700);

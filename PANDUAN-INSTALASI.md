@@ -13,6 +13,7 @@ Frontend (GitHub Pages) ⇄ Google Apps Script (REST API) + Google Sheets + Goog
 |---|---|
 | `biolink-kuliner-frontend.zip` | Website (diunggah ke GitHub Pages). `index.html` ada langsung di dalam ZIP, berikut `nk-license.js` (GitHub Pages) dan `nk-license-blogger.js` (untuk tema Blogger). |
 | `Kode.gs`, `Notifikasi.gs`, `CRM.gs`, `Migrasi.gs` | Backend. Ditempel ke editor Google Apps Script. |
+| `tema-biolink.xml` | Tema Blogger (opsional): beranda blog = Link Bio, `/p/admin.html` = dasbor. File aplikasi tetap dimuat dari GitHub Pages. |
 | `PANDUAN-INSTALASI.md` | Panduan ini. |
 | `nk-protect.js` | Khusus penjual (Nabire Kreatif), untuk menyegel ulang bila template diedit. Jangan diberikan ke pembeli. |
 
@@ -257,9 +258,36 @@ Dasbor → **Migrasi Data** → tempel URL spreadsheet lama → pilih data → *
 - Wajib HTTPS (GitHub Pages sudah HTTPS). Bila memakai Cloudflare, matikan *Auto Minify* dan *Rocket Loader* karena bisa memicu kunci yang keliru.
 - Pencabutan lisensi berlaku paling lambat 24 jam kemudian.
 
+## 11. Pasang di Blogger (domain blog sendiri)
+
+Tema Blogger hanya "pintu masuk". File aplikasi (CSS, JS, gambar, `nk-license-blogger.js`) tetap di GitHub Pages, jadi langkah 3 (unggah ke GitHub) harus sudah selesai.
+
+1. **GitHub dulu**: pastikan isi ZIP terbaru sudah di-*push*, termasuk `nk-license-blogger.js`. Buka `https://USERNAME.github.io/REPO/nk-license-blogger.js` di browser untuk memastikan berkasnya ada.
+2. **Cadangkan tema lama**: Blogger → **Tema** → ▾ → **Cadangkan**.
+3. Buka `tema-biolink.xml` dengan Notepad. Di bagian paling atas ada blok **PENGATURAN TEMA**, satu-satunya bagian yang boleh diubah:
+   - `GAS_URL`: URL `/exec` Apps Script Anda (sudah terisi).
+   - `NAMA_USAHA`: nama usaha untuk hak cipta saat berlisensi.
+   - `ASET`: alamat GitHub Pages, diakhiri `/` (bawaan `https://nabirekreatif.github.io/biolink/`).
+   - `VERSI`: **naikkan angkanya** (7 → 8 → 9 …) setiap kali Anda memperbarui file di GitHub, supaya pengunjung tidak memakai file lama dari cache.
+4. Blogger → **Tema** → ▾ → **Edit HTML** → hapus semua → tempel isi `tema-biolink.xml` → **Simpan**. (Atau ▾ → **Pulihkan** → unggah berkas XML.)
+5. **Judul & deskripsi** situs diatur di Blogger → **Setelan** (Judul, Deskripsi, Deskripsi penelusuran), bukan di kode.
+6. **Halaman admin**: Blogger → **Halaman** → **Halaman baru** → judul `admin` → isi kosong → **Publikasikan**. Alamatnya menjadi `domainblog/p/admin.html` dan otomatis menampilkan dasbor.
+7. Buka blog di **jendela Incognito**. Beranda menampilkan Link Bio; halaman `/p/...` dan postingan lain tetap menampilkan isi Blogger biasa.
+8. **Lisensi**: domain blog tampil dalam mode **DEMO** sampai diaktifkan lewat `domainblog/#key` atau pita DEMO. Jangan mengedit file di GitHub selain `js/config.js`: segel tetap diperiksa, jadi file yang diubah membuat halaman terkunci.
+
+Catatan Blogger:
+- Tombol **Install (PWA)** bekerja di domain blog. Manifest dibuat otomatis untuk domain blog Anda dan ikonnya mengikuti logo di dasbor.
+- *Service worker* (mode offline) tidak tersedia di Blogger karena Blogger tidak bisa menyimpan berkas `sw.js`. Aplikasi tetap bisa dipasang dan berjalan normal saat online.
+- Setiap kali file di GitHub diperbarui: push ke GitHub → naikkan `VERSI` di tema → Simpan tema.
+
 ---
 
 ## Update dari versi sebelumnya
+
+**Edisi Kuliner v7** (data terbaru langsung tampil, tombol Install, tombol X zoom gambar, tema Blogger):
+1. Backend tidak berubah (tidak perlu deploy ulang).
+2. Timpa semua berkas frontend dengan isi ZIP baru, termasuk `nk-license.js` dan `nk-license-blogger.js`. **Tetap pakai `js/config.js` lama** yang berisi URL. Bila ingin, tambahkan baris `CACHE_SEGAR_DETIK: 120` (lihat contoh di `config.js` baru). Lalu `git add .` → `git commit -m "v7"` → `git push`.
+3. Bila memakai Blogger: pasang `tema-biolink.xml` (bagian 11).
 
 **Dari Acc Cell v6 ke edisi Kuliner** (situs baru disarankan):
 1. Buat proyek Apps Script & spreadsheet **baru**, tempel keempat berkas `.gs`, jalankan `setupAplikasi()`. Paket data kuliner terpasang otomatis.
@@ -279,7 +307,8 @@ Dasbor → **Migrasi Data** → tempel URL spreadsheet lama → pilih data → *
 
 ## Kecepatan & PageSpeed
 
-- Pengunjung yang **pernah membuka** link bio langsung melihat tampilan terakhir (warna, header/navigasi, isi), lalu data terbaru dicek di latar. Hasil edit dasbor tampil begitu data terbaru datang (±1–3 detik), tanpa tampilan bawaan muncul lebih dulu.
+- Pengunjung yang membuka ulang dalam **2 menit** langsung melihat tampilan terakhir. Lebih dari itu, halaman **menunggu data terbaru** (maks. 3 detik) sehingga hasil edit dasbor (gambar hero, pop-up, teks) langsung tampil, **tanpa tampilan lama atau data contoh muncul dulu**. Bila server lambat > 3 detik, tampilan terakhir dipakai sementara. Pop-up promo hanya dibuka dari data terbaru.
+- Atur lewat `CACHE_SEGAR_DETIK` di `js/config.js` (atau di tema Blogger): `0` = selalu tunggu data terbaru.
 - Pengunjung **pertama kali** melihat kerangka abu-abu netral sampai data dari Apps Script datang. Header/navigasi bawaan tidak lagi ditampilkan lalu dihilangkan, sehingga halaman tidak "melompat".
 - Batas yang tersisa: kunjungan pertama tetap menunggu jawaban Apps Script (biasanya 1–3 detik, lebih lama bila server baru "bangun"). Ini sifat layanan gratis Google, bukan kode template.
 - Nilai PageSpeed bervariasi tiap pengujian. Uji 2–3 kali dan lihat rata-ratanya.
@@ -294,7 +323,9 @@ Dasbor → **Migrasi Data** → tempel URL spreadsheet lama → pilih data → *
 | Login terkunci 15 menit | Lima kali salah sandi. Tunggu, atau superadmin melakukan reset. |
 | Gambar gagal diunggah | Kebijakan Google Workspace melarang berbagi publik. Minta admin Workspace mengizinkan berbagi "Siapa saja yang memiliki link". |
 | WA tidak terkirim | Cek token dan status perangkat Fonnte (harus `connect`), lihat tab **Antrean**, lalu jalankan `pasangTrigger()`. |
-| Tampilan lama sempat muncul sebentar | Normal bagi pengunjung yang pernah berkunjung: tampilan terakhir ditampilkan seketika lalu diperbarui. Pastikan frontend sudah versi v5. |
+| Tampilan/data lama sempat muncul lalu berubah | Perbarui ke v7. Di Blogger: pasang `tema-biolink.xml` baru (tema lama memakai skrip awal versi lama) dan naikkan `VERSI`. |
+| Tombol Install tidak muncul / tidak bereaksi | Perbarui ke v7. Chrome hanya menawarkan pemasangan bila manifest valid dan aplikasi belum terpasang; bila prompt tidak tersedia, tombol menampilkan petunjuk pemasangan manual. Coba di Chrome (bukan browser bawaan WhatsApp/Instagram). |
+| Di Blogger tampil teks polos / terkunci | `nk-license-blogger.js` belum ada di GitHub, atau `ASET` di tema salah. Buka URL berkas itu di browser, lalu naikkan `VERSI`. |
 | Warna/teks baru belum tampil | Tunggu ±1 menit atau muat ulang halaman. Pastikan backend sudah *Versi baru* v4. |
 | Halaman terkunci "Template tidak berlisensi" | Ada berkas tersegel yang diubah, atau hosting mengubah berkas. Unggah ulang berkas asli. |
 

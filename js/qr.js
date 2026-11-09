@@ -1,5 +1,5 @@
 /* ==========================================================================
- *  Acc Cell WebApp — pembuat QR Code mandiri (tanpa layanan luar).
+ *  Bio Link WebApp — pembuat QR Code mandiri (tanpa layanan luar).
  *  Mode byte (UTF-8), versi 1–40 otomatis, koreksi galat L/M/Q/H, pemilihan mask terbaik.
  *  Algoritme mengikuti standar ISO/IEC 18004 (pola referensi Project Nayuki, MIT).
  *  © Nabire Kreatif — template berlisensi

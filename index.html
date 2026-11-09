@@ -28,16 +28,19 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&amp;icon_names=account_balance,account_balance_wallet,account_circle,add,add_a_photo,add_shopping_cart,apartment,apps,arrow_back,arrow_downward,arrow_forward,arrow_upward,bakery_dining,battery_charging_full,block,bolt,brush,build_circle,cable,call,campaign,category,cell_tower,chat,check_circle,checkroom,chevron_left,chevron_right,child_care,cleaning_services,close,cloud_off,computer,construction,contacts,content_copy,content_cut,content_paste,credit_card,dark_mode,delete,delivery_dining,diamond,directions_bike,directions_car,domain,done_all,download,edit,emoji_events,error,event,event_seat,expand_more,face,favorite,fiber_new,fitness_center,flight,forum,gestureend,gpp_maybe,grid_view,group,handshake,handyman,headphones,help,history,home,home_repair_service,hotel,hourglass_top,icecream,inbox,info,install_mobile,inventory_2,ios_share,keterangan,key,label,language,light_mode,lightbulb,link,list_alt,local_cafe,local_fire_department,local_florist,local_laundry_service,local_offer,local_shipping,location_off,location_on,lock,lock_reset,login,logout,loyalty,lunch_dining,mail,manage_accounts,map,mark_chat_read,medical_services,menu,menu_book,menu_items,merge,move_up,music_note,near_me,new_releases,open_in_new,payments,percent,person,person_add,person_search,pets,phone_android,phone_iphone,photo_camera,play_arrow,print,public,published_with_changes,qr_code_2,qr_code_scanner,quiz,receipt_long,recycling,redeem,refresh,remove,replay,restaurant,restaurant_menu,rocket_launch,save,schedule,school,search,search_off,sell,send,settings,share,shield,shield_person,shopping_bag,shopping_cart,sim_card,smart_display,smartphone,spa,space_dashboard,sports_esports,star,stop,storefront,support_agent,swap_horizontal_circle,sync,tablet_mac,takeout_dining,thumb_up,touch_app,tune,two_wheeler,upload,upload_file,verified,verified_user,videocam,view_carousel,view_week,visibility,visibility_off,warning,watch,web,widgets,wifi,workspace_premium&amp;display=block">
   <link rel="stylesheet" href="css/style.css">
   <script src="js/config.js"></script>
-  <script>/* tampil seketika: pasang warna/tema/header terakhir dari perangkat & mulai ambil data sebelum halaman tergambar */
+  <script>/* tampil seketika: pasang ikon, tema & tampilan terakhir (bila masih segar) lalu mulai ambil data sebelum halaman tergambar */
+addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__bip=e});
 (function(){var d=document.documentElement,L='acc:v1:',C=window.ACC_CONFIG||{},U=String(C.GAS_URL||'').trim();if(!U)return;
 var b=null;try{b=JSON.parse(localStorage.getItem(L+'boot')||'null')}catch(e){}
-if(b){try{if(b.css){var s=document.createElement('style');s.id='theme-vars';s.textContent=b.css;document.head.appendChild(s)}
+var seg=!!(b&&b.t&&Date.now()-b.t<(C.CACHE_SEGAR_DETIK!=null&&C.CACHE_SEGAR_DETIK!==''?+C.CACHE_SEGAR_DETIK||0:120)*1e3);
+if(b){try{var q=function(r,h){if(!h)return;var e=document.querySelector('link[rel="'+r+'"]');if(e)e.setAttribute('href',h)};if(b.mj)q('manifest',URL.createObjectURL(new Blob([b.mj],{type:'application/manifest+json'})));q('apple-touch-icon',b.ati);q('icon',b.fav);
 var t='';try{t=JSON.parse(localStorage.getItem(L+'tema')||'""')}catch(e){}
 var dk=(t&&b.tt)?t==='gelap':(b.def==='gelap'||(b.def==='sistem'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches));
-d.setAttribute('data-theme',dk?'dark':'light');if(b.nh)d.classList.add('no-header');if(b.nb)d.classList.add('no-bnav');
-if(b.hero){var l=document.createElement('link');l.rel='preload';l.as='image';l.href=b.hero;l.setAttribute('fetchpriority','high');document.head.appendChild(l)}
-var q=function(r,h){if(!h)return;var e=document.querySelector('link[rel="'+r+'"]');if(e)e.setAttribute('href',h)};q('manifest',b.man);q('apple-touch-icon',b.ati);q('icon',b.fav)}catch(e){}}
-else d.classList.add('boot');
+d.setAttribute('data-theme',dk?'dark':'light');
+if(seg){if(b.css){var s=document.createElement('style');s.id='theme-vars';s.textContent=b.css;document.head.appendChild(s)}
+if(b.nh)d.classList.add('no-header');if(b.nb)d.classList.add('no-bnav');
+if(b.hero){var l=document.createElement('link');l.rel='preload';l.as='image';l.href=b.hero;l.setAttribute('fetchpriority','high');document.head.appendChild(l)}}}catch(e){}}
+if(!seg)d.classList.add('boot');
 try{window.__accPub=fetch(U+(U.indexOf('?')>-1?'&':'?')+'action=public',{cache:'no-store',redirect:'follow'}).then(function(r){return r.text()}).then(JSON.parse).catch(function(){return null})}catch(e){}})();</script>
   <script src="js/demo-data.js" defer></script>
   <script src="js/core.js" defer></script>

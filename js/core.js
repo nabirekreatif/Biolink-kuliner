@@ -8,7 +8,7 @@
   const CFG = window.ACC_CONFIG || {};
   const GAS_URL = String(CFG.GAS_URL || '').trim();
   const LS = 'acc:v1:';
-  const App = window.App = { mode: window.ACC_MODE === 'admin' ? 'admin' : 'public', base: window.ACC_MODE === 'admin' ? '../' : '', cfg: CFG, gas: GAS_URL, demo: !GAS_URL, pub: null, admin: null, pages: {}, cur: '', dirty: {} };
+  const App = window.App = { mode: window.ACC_MODE === 'admin' ? 'admin' : 'public', base: window.ACC_BASE != null ? String(window.ACC_BASE) : (window.ACC_MODE === 'admin' ? '../' : ''), cfg: CFG, gas: GAS_URL, demo: !GAS_URL, pub: null, admin: null, pages: {}, cur: '', dirty: {} };
 
   /* ---------------- util ---------------- */
   const $ = (s, r) => (r || document).querySelector(s);
@@ -20,7 +20,7 @@
   const hp62 = v => { const s = hp08(v); return s ? '62' + s.slice(1) : ''; };
   const hashStr = s => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h + ':' + s.length; };
   const debounce = (fn, ms) => { let t; return function () { const a = arguments; clearTimeout(t); t = setTimeout(() => fn.apply(this, a), ms); }; };
-  const img = (u, w) => { u = String(u || ''); if (/lh3\.googleusercontent\.com\/d\/[^=]+$/.test(u)) return u + '=w' + (w || 800); if (u && window.ACC_MODE === 'admin' && !/^([a-z]+:|\/|data:|\.\.\/)/i.test(u)) return '../' + u; return u; };
+  const img = (u, w) => { u = String(u || ''); if (/lh3\.googleusercontent\.com\/d\/[^=]+$/.test(u)) return u + '=w' + (w || 800); if (u && App.base && !/^([a-z]+:|\/|data:|blob:|\.\.\/)/i.test(u)) return App.base + u; return u; };   // gambar relatif (assets/…) → folder aplikasi (juga saat dimuat dari Blogger)
   const cabNama = c => {
     if (c === 'keduanya') return App.T ? App.T('label_semua_cabang') : 'Semua cabang';
     if (c === 'semua') return 'Semua';
@@ -261,20 +261,29 @@
   App.warmUp = function () { if (GAS_URL) fetch(GAS_URL + (GAS_URL.indexOf('?') > -1 ? '&' : '?') + 'ping=' + Date.now(), { mode: 'no-cors', cache: 'no-store' }).catch(() => { }); };
 
   /* ---------------- data publik: SWR (tampil seketika dari cache) ---------------- */
+  const CACHE_SEGAR = (CFG.CACHE_SEGAR_DETIK != null && CFG.CACHE_SEGAR_DETIK !== '' ? Number(CFG.CACHE_SEGAR_DETIK) || 0 : 120) * 1000;   // 0 = selalu tunggu data terbaru
   App.loadPublic = async function (force) {
     if (!GAS_URL) { setPub(window.ACC_DEMO, true); return; }
     const c = Store.get('pub', null);
-    if (c && !App.pub) setPub(c.data, true);
-    const fresh = (Number(CFG.FRESH_DETIK) || 60) * 1000;
+    const fresh = (Number(CFG.FRESH_DETIK) || 60) * 1000, recent = c && Date.now() - c.t < CACHE_SEGAR;
     const early = window.__accPub; window.__accPub = null;          // permintaan yang sudah dimulai di <head>
-    if (!early && c && !force && Date.now() - c.t < fresh) return;
-    let r = early ? await early : null;
+    // cache masih segar → tampil seketika; cache lama → tunggu data terbaru (maks. 3 dtk) agar hasil edit dasbor langsung tampil
+    if (c && !App.pub && recent) setPub(c.data, true);
+    if (!early && c && !force && Date.now() - c.t < fresh) { App.pubFresh = true; return; }
+    let r = null;
+    if (early) {
+      if (c && !App.pub) { r = await Promise.race([early, new Promise(ok => setTimeout(() => ok('lambat'), 3000))]);
+        if (r === 'lambat') { setPub(c.data, true); r = await early; } }
+      else r = await early;
+    }
     if (!r || !r.success) r = await App.getPublic();
     if (r && r.success) {
       const h = hashStr(JSON.stringify(r.data));
       Store.set('pub', { t: Date.now(), h, data: r.data });
-      if (!c || c.h !== h || !App.pub) setPub(r.data, false);
-    } else if (!App.pub) {
+      App.pubFresh = true;
+      if (!c || c.h !== h || !App.pub) setPub(r.data, false); else document.dispatchEvent(new CustomEvent('acc:fresh'));
+    } else if (!App.pub && c) setPub(c.data, true);                 // server gagal → pakai data terakhir
+    else if (!App.pub) {
       App.pubError = r && r.message || 'Gagal memuat data';
       App.rerender();
     }
@@ -288,7 +297,7 @@
     if (App.mode !== 'admin' && (wasBoot || (!first && chromeKey() !== chrome0))) $$('#app > .page').forEach(p => p.remove());
     de.classList.remove('boot');
     App.setTheme(); App.applyChrome();
-    if (App.mode !== 'admin' && GAS_URL) saveBoot();
+    if (App.mode !== 'admin' && GAS_URL && !fromCache) saveBoot();
     if (App.refreshCopy) App.refreshCopy();
     if (App.mode !== 'admin') setTimeout(() => App.updateManifest(), 0);
     if (s.meta_deskripsi) { const m = $('meta[name=description]'); if (m) m.setAttribute('content', s.meta_deskripsi); }
@@ -308,7 +317,8 @@
   function saveBoot() {
     try {
       const st = document.getElementById('theme-vars'), b0 = (App.pub.banners || [])[0];
-      Store.set('boot', { css: st ? st.textContent : '', def: App.T('tema_bawaan'), tt: App.on_('tombol_tema') ? 1 : 0, nh: App.on_('header_tampil') ? 0 : 1, nb: App.on_('navbawah_tampil') ? 0 : 1,
+      const ob = Store.get('boot', null) || {};
+      Store.set('boot', { t: Date.now(), mj: ob.mj, ati: ob.ati, fav: ob.fav, css: st ? st.textContent : '', def: App.T('tema_bawaan'), tt: App.on_('tombol_tema') ? 1 : 0, nh: App.on_('header_tampil') ? 0 : 1, nb: App.on_('navbawah_tampil') ? 0 : 1,
         hero: b0 && (App.pub.sections || []).some(x => x.id === 'hero' && x.tampil !== false) ? img(b0.gambar_url, heroW()) : '' });
     } catch (e) { }
   }
@@ -390,6 +400,8 @@
     o.className = 'overlay' + (opt.center ? ' center' : ''); o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true');
     o.innerHTML = '<div class="sheet' + (opt.lg ? ' lg' : '') + '">' + (opt.center ? '' : '<div class="grab"></div>') +
       (opt.title ? '<div class="sheet-h"><h3>' + esc(opt.title) + '</h3><button class="icon-btn" data-x aria-label="Tutup">' + I('close') + '</button></div>' : '') + html + '</div>';
+    // lembar tanpa judul (mis. zoom gambar) tetap WAJIB punya tombol X — klik di luar tidak menutup
+    if (!opt.title && !opt.noX && !o.querySelector('[data-x].popup-x')) { const x = document.createElement('button'); x.type = 'button'; x.className = 'sheet-x'; x.setAttribute('data-x', ''); x.setAttribute('aria-label', 'Tutup'); x.innerHTML = I('close'); o.querySelector('.sheet').appendChild(x); }
     const close = () => { if (!o.isConnected) return; o.remove(); document.removeEventListener('keydown', onKey); if (!o._unlocked) { o._unlocked = 1; App.unlockScroll(); } if (opt.onClose) opt.onClose(); };
     const onKey = e => { if (e.key === 'Escape') close(); };
     // tutup HANYA lewat tombol (X / Batal) — klik di luar tidak menutup, agar isian tidak hilang tak sengaja
@@ -465,31 +477,36 @@
   App.updateManifest = async function () {
     if (App.mode === 'admin' || !App.pub) return;
     const S = SET(), logo = String(S.logo_url || '').trim(), nama = S.nama_toko || CFG.NAMA_USAHA || 'Bio Link', bg = Wc('warna_kartu') || '#FFFFFF';
-    const root = new URL(App.base || './', location.href).href.split('#')[0].split('?')[0];
+    // start_url/scope/id WAJIB satu domain dengan halaman (GitHub Pages maupun Blogger); ikon boleh dari domain aset (GitHub)
+    const appRoot = location.origin + location.pathname.replace(/[^/]*$/, ''), aset = new URL(App.base || './', location.href).href.split('#')[0].split('?')[0];
     const sig = [logo, bg].join('|');
     let ic = Store.get(ICON_KEY, null);
-    if (!logo) ic = { sig, i192: root + 'assets/icon-192.png', i512: root + 'assets/icon-512.png', mask: root + 'assets/icon-maskable-512.png', apple: root + 'assets/apple-touch-icon.png', fav: root + 'assets/favicon.png' };
+    if (!logo) ic = { sig, i192: aset + 'assets/icon-192.png', i512: aset + 'assets/icon-512.png', mask: aset + 'assets/icon-maskable-512.png', apple: aset + 'assets/apple-touch-icon.png', fav: aset + 'assets/favicon.png' };
     else if (!ic || ic.sig !== sig) {
-      const src = new URL(img(logo, 512), location.href).href;
-      try { ic = Object.assign({ sig }, iconsFrom(await loadImg(src), bg)); }
-      catch (e) {                         // gambar tidak mengizinkan kanvas → pakai URL langsung (lh3 bisa dipotong persegi)
-        const base = /https:\/\/lh3\.googleusercontent\.com\/d\/[^=]+/.exec(src); const sq = n => base ? base[0] + '=s' + n + '-c' : src;
-        ic = { sig, i192: sq(192), i512: sq(512), mask: sq(512), apple: sq(180), fav: sq(64), url: 1 };
+      const src = new URL(img(logo, 512), location.href).href, lh = /^https:\/\/lh3\.googleusercontent\.com\/d\/[^=?#]+/.exec(src);
+      if (lh) { const sq = n => lh[0] + '=s' + n + '-c'; ic = { sig, i192: sq(192), i512: sq(512), mask: sq(512), apple: sq(180), fav: sq(64), url: 1 }; }   // logo dari Drive: URL persegi asli (bisa diunduh Chrome/WebAPK)
+      else {
+        try { ic = Object.assign({ sig }, iconsFrom(await loadImg(src), bg)); }
+        catch (e) { ic = { sig, i192: src, i512: src, mask: src, apple: src, fav: src, url: 1 }; }
       }
       try { Store.set(ICON_KEY, ic); } catch (e) { }
     }
-    const man = { name: nama, short_name: nama.length > 12 ? nama.slice(0, 12).trim() : nama, description: S.meta_deskripsi || S.tagline || '', id: root, start_url: root + '#/', scope: root,
+    const man = { name: nama, short_name: nama.length > 12 ? nama.slice(0, 12).trim() : nama, description: S.meta_deskripsi || S.tagline || '', id: appRoot, start_url: appRoot + '#/', scope: appRoot,
       display: 'standalone', display_override: ['standalone', 'minimal-ui'], orientation: 'portrait', lang: 'id',
       background_color: Wc('warna_latar'), theme_color: Wc('warna_header'),
       icons: [{ src: ic.i192, sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: ic.i512, sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: ic.mask, sizes: '512x512', type: 'image/png', purpose: 'maskable' }],
-      shortcuts: [{ name: App.T('menu_katalog_judul'), url: root + '#/katalog', icons: [{ src: ic.i192, sizes: '192x192' }] }] };
+      shortcuts: [{ name: App.T('menu_katalog_judul'), url: appRoot + '#/katalog', icons: [{ src: ic.i192, sizes: '192x192' }] }] };
     if (ic.url) man.icons.forEach(x => { delete x.type; });
-    const href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(man));
+    const mj = JSON.stringify(man);
+    if (mj === App._manJson) return; App._manJson = mj;
+    const bm = (Store.get('boot', null) || {}).mj, cur = $('link[rel="manifest"]');
+    if (bm === mj && cur && /^blob:/.test(cur.getAttribute('href') || '')) { App._manifest = man; return; }   // sudah dipasang dari <head>
+    const href = URL.createObjectURL(new Blob([mj], { type: 'application/manifest+json' }));
     const set = (rel, h) => { let l = $('link[rel="' + rel + '"]'); if (!l) { l = document.createElement('link'); l.rel = rel; document.head.appendChild(l); } if (l.getAttribute('href') !== h) l.setAttribute('href', h); };
     set('manifest', href); set('apple-touch-icon', ic.apple); set('icon', ic.fav);
     const am = $('meta[name="apple-mobile-web-app-title"]'); if (am) am.setAttribute('content', man.short_name);
     App._manifest = man;
-    try { const b = Store.get('boot', null); if (b && b.man !== href) { b.man = href; b.ati = ic.apple; b.fav = ic.fav; Store.set('boot', b); } } catch (e) { }
+    try { const b = Store.get('boot', null); if (b && b.mj !== mj) { b.mj = mj; b.ati = ic.apple; b.fav = ic.fav; delete b.man; Store.set('boot', b); } } catch (e) { }
   };
 
   /* ---------------- PWA: tombol "Install" di header (hilang otomatis bila sudah terpasang) ---------------- */
@@ -502,6 +519,7 @@
   App.canInstall = () => !!App._canInstall && !isStandalone() && App.mode !== 'admin';
   App.installBtn = installBtn;
   addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; Store.del(PWA_KEY); installBtn(true); });
+  if (window.__bip) { deferred = window.__bip; window.__bip = null; Store.del(PWA_KEY); setTimeout(() => installBtn(true), 0); }   // event sempat muncul sebelum skrip ini dimuat
   addEventListener('appinstalled', () => { deferred = null; Store.set(PWA_KEY, Date.now()); installBtn(false); App.toast('Aplikasi ' + (SET().nama_toko || CFG.NAMA_USAHA || 'Bio Link') + ' terpasang di HP Anda'); });
   App.install = async function () {
     if (deferred) {
@@ -509,7 +527,7 @@
       try { const r = await d.userChoice; if (r && r.outcome === 'accepted') { Store.set(PWA_KEY, Date.now()); installBtn(false); } else { deferred = d; } } catch (er) { }
       return;
     }
-    App.sheet('<div class="center"><img src="assets/icon-192.png" alt="" style="width:72px;height:72px;border-radius:18px;margin:0 auto 12px"><p style="margin:0 0 14px;line-height:21px">' +
+    App.sheet('<div class="center"><img src="' + esc((App._manifest && App._manifest.icons[0].src) || (App.base + 'assets/icon-192.png')) + '" alt="" style="width:72px;height:72px;border-radius:18px;margin:0 auto 12px"><p style="margin:0 0 14px;line-height:21px">' +
       (isIOS() ? 'Di Safari: ketuk tombol <b>Bagikan</b> ' + I('ios_share') + ' lalu pilih <b>“Tambah ke Layar Utama”</b>.' : 'Buka menu browser <b>⋮</b> lalu pilih <b>“Instal aplikasi”</b> atau <b>“Tambahkan ke layar utama”</b>.') +
       '</p><button class="btn btn-ink btn-block" data-x>Mengerti</button></div>', { center: true, title: 'Pasang Aplikasi ' + (SET().nama_toko || CFG.NAMA_USAHA || 'Bio Link') });
   };
@@ -527,7 +545,7 @@
     addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && ['+', '-', '=', '0'].indexOf(e.key) > -1) e.preventDefault(); });
     document.addEventListener('contextmenu', e => { if (e.target.closest('img,a') && !e.target.closest('input,textarea')) e.preventDefault(); });
   }
-  if ('serviceWorker' in navigator && location.protocol === 'https:' && window.ACC_MODE !== 'admin') addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && window.ACC_MODE !== 'admin' && window.ACC_BASE == null) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
 
   /* ---------------- bilah lisensi: geser elemen bawah agar tidak tertutup ---------------- */
   function measureNk() {
@@ -558,7 +576,7 @@
   /* ---------------- mulai ---------------- */
   App.start = function () {
     const c0 = Store.get('pub', null);
-    if (App.mode !== 'admin' && GAS_URL && c0 && c0.data && !App.pub) { App.pub = c0.data; document.documentElement.classList.remove('boot'); }
+    if (App.mode !== 'admin' && GAS_URL && c0 && c0.data && !App.pub && Date.now() - c0.t < CACHE_SEGAR) { App.pub = c0.data; document.documentElement.classList.remove('boot'); }
     App.setTheme(); App.applyChrome();
     document.addEventListener('click', e => { if (e.target.closest('[data-theme-toggle]')) { App.setTheme(App.theme() === 'gelap' ? 'terang' : 'gelap'); } });
     if (window.matchMedia) { const mq = matchMedia('(prefers-color-scheme: dark)'); if (mq.addEventListener) mq.addEventListener('change', () => App.setTheme()); }
@@ -569,7 +587,7 @@
     if (App.mode !== 'admin') App.track('kunjungan');
     if (Store.ss('visit') !== '1') { Store.ss('visit', '1'); }
     noZoom();
-    installBtn(isIOS() && !isStandalone());           // iOS tidak punya prompt otomatis: tampilkan tombol berisi petunjuk
+    installBtn(!!deferred || (isIOS() && !isStandalone()));           // iOS tidak punya prompt otomatis: tampilkan tombol berisi petunjuk
     if (window.matchMedia) { const mq = matchMedia('(display-mode: standalone)'); if (mq.addEventListener) mq.addEventListener('change', () => { installBtn(false); noZoom(); }); }
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') { const away = Date.now() - (App._hiddenAt || Date.now()); if (away > 120000) { App.warmUp(); App.loadPublic(); } }

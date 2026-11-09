@@ -81,14 +81,14 @@
 
   /* ---------------- belum terhubung (mode demo) ---------------- */
   function renderSetup(e) {
-    e.innerHTML = '<div class="login-wrap"><div class="card login-card"><img class="logo" src="' + A.base + 'assets/logo.png" alt=""><h2 class="center">Dasbor Admin Acc Cell</h2>' +
+    e.innerHTML = '<div class="login-wrap"><div class="card login-card"><img class="logo" src="' + A.base + 'assets/logo.png" alt=""><h2 class="center">Dasbor Admin ' + esc(((A.pub||{}).settings||{}).nama_toko || A.cfg.NAMA_USAHA || 'Bio Link') + '</h2>' +
       '<div class="note amber mt16">' + I('settings') + '<div><b>Backend belum terhubung.</b> Dasbor memerlukan Google Apps Script.<ol style="margin:8px 0 0;padding-left:18px;line-height:20px"><li>Pasang backend (Kode.gs dkk.) lalu jalankan <span class="mono">setupAplikasi()</span>.</li><li>Deploy sebagai Web App (akses: Anyone) dan salin URL <span class="mono">/exec</span>.</li><li>Tempel di <span class="mono">js/config.js</span> → <span class="mono">GAS_URL</span>, lalu push ulang.</li></ol></div></div>' +
       '<a class="btn btn-ghost btn-block mt16" href="../">' + I('arrow_back') + 'Kembali ke Link Bio</a><button class="btn btn-soft btn-block mt8" data-nk-license>' + I('key') + 'Lisensi Template</button></div></div>';
   }
 
   /* ---------------- login ---------------- */
   function renderLogin(e) {
-    e.innerHTML = '<div class="login-wrap"><form class="card login-card f" autocomplete="on"><img class="logo" src="' + A.base + 'assets/logo.png" alt=""><div class="center"><h2 style="font:800 22px var(--f-head)">Masuk Dasbor</h2><p class="muted small" style="margin:4px 0 0">Superadmin &amp; Admin Cabang Acc Cell</p></div>' +
+    e.innerHTML = '<div class="login-wrap"><form class="card login-card f" autocomplete="on"><img class="logo" src="' + A.base + 'assets/logo.png" alt=""><div class="center"><h2 style="font:800 22px var(--f-head)">Masuk Dasbor</h2><p class="muted small" style="margin:4px 0 0">Superadmin &amp; Admin Outlet/Cabang</p></div>' +
       '<div class="fld"><label for="lu">Username</label><input id="lu" name="username" autocomplete="username" autocapitalize="none" required></div>' +
       '<div class="fld"><label for="lp">Sandi</label><div style="position:relative"><input id="lp" name="password" type="password" autocomplete="current-password" required><button type="button" class="clr" data-eye style="position:absolute;right:6px;top:7px;width:34px;height:34px">' + I('visibility') + '</button></div></div>' +
       '<div class="small" style="color:var(--danger);min-height:16px" data-err></div><button class="btn btn-ink btn-block" data-go>' + I('login') + 'Masuk</button>' +
@@ -554,7 +554,7 @@
     const drawPv = () => {
       const d = read(f, HDR_SPEC), st = vals(), lg = d.header_logo_url || st.logo_url;
       const hb = hdr.filter(x => x.tampil).map(x => { const m = A.menuById(x.id) || {}; return '<span class="chip' + (m.id === 'cs' ? ' chip-ok' : m.id === 'install' ? ' chip-amber' : '') + '">' + I(x.icon || m.icon) + (m.id === 'tema' ? '' : esc(x.label || (m.id === 'cs' ? A.T('tombol_cs_teks') : m.id === 'install' ? A.T('tombol_install_teks') : A.shortLabel(m)))) + '</span>'; }).join('');
-      box.querySelector('[data-tpv]').innerHTML = (d.header_tampil === 'YA' ? '<div class="ph-top"><img src="' + esc(lg ? img(lg, 80) : A.base + 'assets/logo.png') + '" alt="">' + (d.header_tampil_nama === 'YA' ? '<b style="font:800 14px var(--f-head)">' + esc(d.header_nama || st.nama_toko || 'Acc Cell') + '</b>' : '') + '<span class="right row" style="gap:4px">' + hb + '</span></div>' : '<div class="ph-top muted small">Header disembunyikan</div>') +
+      box.querySelector('[data-tpv]').innerHTML = (d.header_tampil === 'YA' ? '<div class="ph-top"><img src="' + esc(lg ? img(lg, 80) : A.base + 'assets/logo.png') + '" alt="">' + (d.header_tampil_nama === 'YA' ? '<b style="font:800 14px var(--f-head)">' + esc(d.header_nama || st.nama_toko || 'Bio Link') + '</b>' : '') + '<span class="right row" style="gap:4px">' + hb + '</span></div>' : '<div class="ph-top muted small">Header disembunyikan</div>') +
         '<div class="ph-body"><div class="skel" style="height:56px"></div><div class="skel" style="height:34px"></div><div class="skel" style="height:34px"></div></div>' +
         (d.navbawah_tampil === 'YA' && nav.some(x => x.tampil) ? '<div class="ph-nav">' + nav.filter(x => x.tampil).map(x => { const m = A.menuById(x.id) || {}; return '<span>' + I(x.icon || m.icon) + esc(x.label || A.shortLabel(m)) + '</span>'; }).join('') + '</div>' : '<div class="ph-nav muted">Navigasi bawah disembunyikan</div>');
     };
@@ -601,7 +601,7 @@
     const drawPv = () => {
       const c = cur();
       pv.style.cssText = '--amber:' + c.warna_aksen + ';--on-amber:' + c.warna_aksen_teks + ';--amber-ink:' + c.warna_harga + ';--ink:' + c.warna_teks + ';--ink-2:' + c.warna_teks2 + ';--canvas:' + c.warna_latar + ';--surface:' + c.warna_kartu + ';--line:' + c.warna_garis + ';--hdr:' + c.warna_header + ';--wa:' + c.warna_wa + ';--sos:' + c.warna_sosmed + ';color:var(--ink)';
-      pv.innerHTML = '<div class="ph-top"><img src="' + A.base + 'assets/logo.png" alt=""><b style="font:800 14px var(--f-head)">' + esc(v.nama_toko || 'Acc Cell') + '</b><span class="right chip chip-ok">CS</span></div>' +
+      pv.innerHTML = '<div class="ph-top"><img src="' + A.base + 'assets/logo.png" alt=""><b style="font:800 14px var(--f-head)">' + esc(v.nama_toko || 'Bio Link') + '</b><span class="right chip chip-ok">CS</span></div>' +
         '<div class="ph-body"><div class="tile main" style="padding:12px"><span class="ic" style="width:40px;height:40px">' + I('smartphone') + '</span><span class="grow"><h3 style="font-size:14px">Katalog</h3><p>Contoh teks keterangan</p></span></div>' +
         '<div class="pcard" style="cursor:default"><div class="pbody"><span class="pmeta">Merek • Baru</span><b class="pname">Contoh ' + esc(A.T('kata_produk')) + '</b><div class="price">Rp 1.250.000</div><span class="btn btn-wa" style="min-height:36px">' + esc(A.T('tombol_pesan')) + '</span></div></div>' +
         '<div class="row"><span class="btn btn-amber btn-sm grow">Tombol utama</span><span class="soc-btn" style="min-height:40px;padding:6px 12px;flex:1"><b style="font-size:13px">Instagram</b></span></div></div>';
@@ -821,7 +821,7 @@
   };
   function tabBlast(box) {
     box.innerHTML = '<div class="two"><div class="panel"><div class="panel-h"><h3>1. Pilih Sasaran</h3></div><div class="f">' +
-      '<div class="f2"><div class="fld"><label>Sumber</label><select data-src><option value="crm">CRM Kontak</option><option value="manual">Tempel manual</option></select></div><div class="fld" data-segw><label>Segmen</label><select data-seg><option value="">Semua segmen</option>' + ['Pelanggan', 'Calon Pelanggan', 'Reseller', 'Mitra', 'Tim Acc Cell'].map(s => '<option>' + s + '</option>').join('') + '</select></div></div>' +
+      '<div class="f2"><div class="fld"><label>Sumber</label><select data-src><option value="crm">CRM Kontak</option><option value="manual">Tempel manual</option></select></div><div class="fld" data-segw><label>Segmen</label><select data-seg><option value="">Semua segmen</option>' + ['Pelanggan', 'Calon Pelanggan', 'Reseller', 'Mitra', 'Tim Internal'].map(s => '<option>' + s + '</option>').join('') + '</select></div></div>' +
       '<div class="fld" data-tagw><label>Tag (opsional)</label><input data-tag placeholder="mis. promo"></div><div class="fld" data-manw hidden><label>Nomor (satu per baris: 0812…|Nama)</label><textarea data-man rows="4" placeholder="081234567890|Budi"></textarea></div>' +
       '<div class="row wrap"><button class="btn btn-ink btn-sm" data-load>' + I('group') + 'Muat Penerima</button><button class="btn btn-ghost btn-sm" data-det>' + I('verified') + 'Deteksi Nomor WA</button></div>' +
       '<div data-ring class="row wrap"></div><label class="row small"><input type="checkbox" data-onlywa> Kirim hanya ke nomor terdeteksi WhatsApp</label><div class="tbl-wrap" style="max-height:300px;overflow:auto" data-aud><p class="muted small pad">Klik “Muat Penerima”.</p></div></div></div>' +
@@ -836,7 +836,7 @@
     src.onchange = () => { const man = src.value === 'manual'; $b('[data-manw]').hidden = !man; $b('[data-segw]').hidden = man; $b('[data-tagw]').hidden = man; };
     const recips = () => (aud ? aud.rows : []).filter(r => r.valid && !r.ganda && !r.optOut && (!$b('[data-onlywa]').checked || r.statusWA === 'Terdaftar') && r._on !== false);
     const sum = () => { const n = recips().length, j = String($b('[data-jeda]').value).split('-').map(Number), avg = j.length > 1 ? (j[0] + j[1]) / 2 : j[0] || 5; $b('[data-sum]').textContent = n + ' penerima → ' + Math.ceil(n / batch) + ' batch · perkiraan ±' + Math.max(1, Math.round(n * avg / 60)) + ' menit'; $b('[data-start]').innerHTML = I('rocket_launch') + 'Mulai Blast (' + n + ' nomor)'; };
-    const pv = () => { const first = recips()[0] || { nama: 'Budi' }; $b('[data-pv]').textContent = ($b('[data-msg]').value || 'Pratinjau pesan…').replace(/\{nama\}/g, first.nama).replace(/\{toko\}/g, (B().settings || {}).nama_toko || 'Acc Cell').replace(/\{link\}/g, location.href.split('#')[0]); };
+    const pv = () => { const first = recips()[0] || { nama: 'Budi' }; $b('[data-pv]').textContent = ($b('[data-msg]').value || 'Pratinjau pesan…').replace(/\{nama\}/g, first.nama).replace(/\{toko\}/g, (B().settings || {}).nama_toko || 'Bio Link').replace(/\{link\}/g, location.href.split('#')[0]); };
     const drawAud = () => {
       if (!aud) return; const r = aud.ringkas;
       $b('[data-ring]').innerHTML = ['total', 'valid', 'tidakValid', 'ganda', 'terdaftarWA', 'optOut'].map(k => '<span class="chip' + (k === 'valid' ? ' chip-ok' : k === 'tidakValid' || k === 'optOut' ? ' chip-no' : '') + '">' + ({ total: 'Total', valid: 'Valid', tidakValid: 'Tidak valid', ganda: 'Ganda', terdaftarWA: 'Terdaftar WA', optOut: 'Opt-out' })[k] + ' ' + r[k] + '</span>').join('');
@@ -1004,7 +1004,7 @@
     const loadAll = () => { loadStats(); loadList(); };
     loadAll();
   };
-  const KONTAK_SPEC = [{ k: 'nama', t: 'Nama', req: 1 }, { k: 'wa', t: 'WhatsApp', half: 1, ph: '0812…' }, { k: 'email', t: 'Email', half: 1, type: 'email' }, { k: 'segmen', t: 'Segmen', type: 'select', half: 1, opts: ['Pelanggan', 'Calon Pelanggan', 'Reseller', 'Mitra', 'Tim Acc Cell'] }, { k: 'tag', t: 'Tag (pisahkan koma)', half: 1 }, { k: 'catatan', t: 'Catatan', type: 'textarea', rows: 2 }, { k: 'optOut', t: 'Opt-out (tidak ikut blast)', type: 'switch' }];
+  const KONTAK_SPEC = [{ k: 'nama', t: 'Nama', req: 1 }, { k: 'wa', t: 'WhatsApp', half: 1, ph: '0812…' }, { k: 'email', t: 'Email', half: 1, type: 'email' }, { k: 'segmen', t: 'Segmen', type: 'select', half: 1, opts: ['Pelanggan', 'Calon Pelanggan', 'Reseller', 'Mitra', 'Tim Internal'] }, { k: 'tag', t: 'Tag (pisahkan koma)', half: 1 }, { k: 'catatan', t: 'Catatan', type: 'textarea', rows: 2 }, { k: 'optOut', t: 'Opt-out (tidak ikut blast)', type: 'switch' }];
   function kontakForm(k, done) {
     const o = A.sheet('<form class="f">' + form(KONTAK_SPEC, k || { segmen: 'Pelanggan' }) + (k && k.sumber !== 'manual' ? '<div class="note">' + I('info') + '<div>Kontak tim: perubahan nama/WA/email ditulis ke data akun admin.</div></div>' : '') + '<div class="row"><button type="button" class="btn btn-ghost" data-x>Batal</button><button class="btn btn-ink grow" data-save>Simpan</button></div></form>', { title: k ? 'Ubah Kontak' : 'Tambah Kontak' });
     const f = o.querySelector('form');
