@@ -110,6 +110,16 @@ Bila yang tampil masih versi lama, tekan **Ctrl+Shift+R**.
 
 ---
 
+## 4a. Memakai dasbor dari HP
+
+Dasbor dibuat seperti aplikasi, jadi semua pengaturan bisa diubah lewat HP:
+- **Navigasi bawah** (selalu tampil): **Beranda · Produk · Tampilan · Promo · Menu**. Admin outlet melihat Beranda · Produk · Akun · Menu.
+- **Menu** membuka semua menu dasbor dalam bentuk kotak (Pop-up, Rekening & QRIS, Cabang & Sosmed, Layanan, WhatsApp, CRM, Admin, Migrasi, Log, Lisensi, Keluar).
+- **Bilah atas** menampilkan judul halaman. Tombol **← (kembali)** muncul di setiap sub-halaman, dan ikon kanan atas membuka Link Bio.
+- **Tampilan** berisi 5 pilihan: Bagian Link Bio, Menu, Header & Navigasi, Warna & Tema, Teks & Label. Setelah selesai, ketuk ← untuk memilih pengaturan berikutnya.
+- **Lembar edit** tampil layar penuh. Judul dan tombol **X** ada di atas, **Batal/Simpan** menempel di bawah. Setelah Simpan, lembar tertutup dan daftar di belakangnya langsung diperbarui, jadi Anda bisa langsung mengedit yang lain tanpa memuat ulang browser.
+- Di komputer (layar ≥ 1024 px) dasbor tetap memakai menu samping.
+
 ## 4b. Atur SEMUA tampilan link bio (menu **Tampilan & Teks**)
 
 Template ini bisa dipakai untuk jenis usaha apa pun (toko HP, kuliner, fesyen, jasa, dll). Menu **Tampilan & Teks** punya 5 tab. Setiap tab punya tombol **Simpan**, dan perubahan langsung tampil di link bio. Pengunjung yang sedang membuka situs akan melihatnya paling lambat ±1 menit kemudian.
@@ -283,6 +293,11 @@ Catatan Blogger:
 ---
 
 ## Update dari versi sebelumnya
+
+**Edisi Kuliner v8** (dasbor ramah HP):
+1. Backend tidak berubah.
+2. Timpa semua berkas frontend dengan isi ZIP baru, termasuk `nk-license.js` dan `nk-license-blogger.js`. Tetap pakai `js/config.js` lama. Lalu `git add .` → `git commit -m "v8"` → `git push`.
+3. Blogger: pasang `tema-biolink.xml` baru (atau cukup naikkan `VERSI` di tema lama menjadi `8`) lalu Simpan.
 
 **Edisi Kuliner v7** (data terbaru langsung tampil, tombol Install, tombol X zoom gambar, tema Blogger):
 1. Backend tidak berubah (tidak perlu deploy ulang).

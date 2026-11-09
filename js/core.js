@@ -347,7 +347,7 @@
     if (/^key\/?$/i.test(raw)) return;                       // menu lisensi (#key) — biarkan halaman saat ini
     const parts = raw.split('/');
     let name, param;
-    if (App.mode === 'admin') { name = 'admin'; param = decodeURIComponent(parts[0] || ''); }
+    if (App.mode === 'admin') { name = 'admin'; param = parts.map(decodeURIComponent).filter(Boolean).join('/'); }   // contoh: tampilan/warna
     else { name = App.pages[parts[0]] && !App.pages[parts[0]].admin ? parts[0] : 'bio'; param = parts.slice(1).map(decodeURIComponent).join('/'); }
     const prev = App.cur, def = App.pages[name];
     App._navCount++;
@@ -361,7 +361,7 @@
     if (def.render) def.render(el, param, false, changed);
     App.dirty[name] = false;
     $$('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === (def.nav || name)));
-    document.body.classList.toggle('no-bnav', !!def.admin || (pn0() && pn0().dataset.off === '1'));
+    document.body.classList.toggle('no-bnav', !def.admin && !!(pn0() && pn0().dataset.off === '1'));   // dasbor punya navigasi bawah sendiri
     const pn = $('#pubnav'); if (pn) pn.hidden = !!def.admin;
     if (changed && !def.keepScroll) App.scrollY(0);
     if (def.title) document.title = def.title(param) + ' — ' + ((App.pub && App.pub.settings && App.pub.settings.nama_toko) || CFG.NAMA_USAHA || 'Bio Link');
