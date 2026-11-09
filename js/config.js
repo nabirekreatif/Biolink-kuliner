@@ -9,7 +9,7 @@
  *  Bila GAS_URL kosong, halaman tampil dalam MODE DEMO memakai data contoh bawaan.
  * ========================================================================== */
 window.ACC_CONFIG = {
-  GAS_URL: '',                       // contoh: 'https://script.google.com/macros/s/AKfycb.../exec'
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbz8eHN6QSbAJKuDM6Ltq1HrWCj6DNJlG2GCAOjjuYfNMcxw3rYpBUqsNn6Qi4DMEpYZ/exec',                       // contoh: 'https://script.google.com/macros/s/AKfycb.../exec'
   NAMA_USAHA: 'Bio Link',            // tampil di hak cipta saat template berlisensi
   FRESH_DETIK: 60,                   // data publik dianggap segar selama 60 detik (tanpa panggil server)
   CACHE_SEGAR_DETIK: 120             // kunjungan ulang < 120 dtk tampil seketika dari cache; lebih lama → tunggu data terbaru. 0 = selalu tunggu data terbaru
