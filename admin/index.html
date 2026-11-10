@@ -23,8 +23,31 @@
   <script src="../js/core.js" defer></script>
   <script src="../js/admin.js" defer></script>
   <script src="../js/app.js" defer></script>
+  <script>(function(){try{var b=JSON.parse(localStorage.getItem('acc:v1:boot')||'null'),d=document.documentElement;if(!b)return;window.__spLogo=b.logo;if(b.bg)d.style.setProperty('--sp-bg',b.bg);if(b.ac)d.style.setProperty('--sp-ac',b.ac);var t=JSON.parse(localStorage.getItem('acc:v1:tema')||'""');if((t&&b.tt)?t==='gelap':b.def==='gelap')d.setAttribute('data-theme','dark')}catch(e){}})()</script>
+  <style id="splash-css">/* layar pembuka — tampil sebelum CSS utama dimuat */
+#splash{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:var(--sp-bg,#FFFBF7);color:#1c1917;font:500 14px/1.4 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;transition:opacity .4s ease,visibility .4s;padding:24px;text-align:center}
+html[data-theme=dark] #splash{background:#111110;color:#f5f5f4}
+html.warm #splash{display:none}
+#splash.out{opacity:0;visibility:hidden;pointer-events:none}
+html:not(.siap):not(.warm) body{overflow:hidden}
+#splash .sp-in{display:flex;flex-direction:column;align-items:center;gap:18px;width:min(260px,80vw)}
+#splash .sp-logo{width:88px;height:88px;border-radius:24px;object-fit:cover;box-shadow:0 10px 30px rgba(0,0,0,.12);animation:spP 1.6s ease-in-out infinite;background:#fff}
+#splash .sp-bar{width:100%;height:4px;border-radius:9px;background:rgba(127,127,127,.18);overflow:hidden;position:relative}
+#splash .sp-bar i{position:absolute;left:0;top:0;bottom:0;width:6%;border-radius:9px;background:var(--sp-ac,#E4572E);transition:width .35s ease}
+#splash .sp-bar:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);transform:translateX(-100%);animation:spS 1.2s linear infinite}
+#splash .sp-msg{margin:0;opacity:.75;min-height:20px}
+#splash .sp-msg.warn{opacity:1;color:#b45309}
+#splash.err .sp-msg{color:#b91c1c}
+#splash.err .sp-bar,#splash.err .sp-logo{animation:none;opacity:.5}
+#splash .sp-retry{border:0;border-radius:999px;padding:12px 26px;font:700 14px Inter,system-ui,sans-serif;background:#1c1917;color:#fff;cursor:pointer;min-height:44px}
+#splash .sp-retry[hidden]{display:none}
+@keyframes spP{50%{transform:scale(.94)}}@keyframes spS{to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){#splash .sp-logo,#splash .sp-bar:after{animation:none}}
+</style>
 </head>
 <body class="is-admin">
+  <div id="splash" role="status" aria-live="polite"><div class="sp-in"><img class="sp-logo" src="../assets/logo.png" alt="" width="88" height="88" fetchpriority="high"><div class="sp-bar"><i></i></div><p class="sp-msg">Memuat data...</p><button type="button" class="sp-retry" hidden>Coba Lagi</button></div></div>
+  <script>(function(){var l=window.__spLogo,i=document.querySelector('#splash .sp-logo');if(l&&i)i.src=l})()</script>
   <a class="sr" href="#app">Lewati ke konten</a>
   <header class="topbar">
     <div class="topbar-in">

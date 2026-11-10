@@ -26,6 +26,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..24,400..500,0..1,0&amp;icon_names=account_balance,account_balance_wallet,account_circle,add,add_a_photo,add_shopping_cart,apartment,apps,arrow_back,arrow_downward,arrow_forward,arrow_upward,bakery_dining,battery_charging_full,block,bolt,bottom_navigation,brush,build_circle,cable,call,campaign,category,cell_tower,chat,check_circle,checkroom,chevron_left,chevron_right,child_care,cleaning_services,close,cloud_off,computer,construction,contacts,content_copy,content_cut,content_paste,credit_card,dark_mode,delete,delivery_dining,diamond,directions_bike,directions_car,domain,done_all,download,edit,emoji_events,error,event,event_seat,expand_more,face,favorite,fiber_new,fitness_center,flight,forum,gestureend,gpp_maybe,grid_view,group,handshake,handyman,headphones,help,history,home,home_repair_service,hotel,hourglass_top,icecream,inbox,info,install_mobile,inventory_2,ios_share,keterangan,key,label,language,light_mode,lightbulb,link,list_alt,local_cafe,local_fire_department,local_florist,local_laundry_service,local_offer,local_shipping,location_off,location_on,lock,lock_reset,login,logout,loyalty,lunch_dining,mail,manage_accounts,map,mark_chat_read,medical_services,menu,menu_book,menu_items,merge,move_up,music_note,near_me,new_releases,open_in_new,palette,payments,percent,person,person_add,person_search,pets,phone_android,phone_iphone,photo_camera,play_arrow,print,public,published_with_changes,qr_code_2,qr_code_scanner,quiz,receipt_long,recycling,redeem,refresh,remove,replay,restaurant,restaurant_menu,rocket_launch,save,schedule,school,search,search_off,sell,send,settings,share,shield,shield_person,shopping_bag,shopping_cart,sim_card,smart_display,smartphone,spa,space_dashboard,sports_esports,star,stop,storefront,support_agent,swap_horizontal_circle,sync,tablet_mac,takeout_dining,text_fields,thumb_up,touch_app,tune,two_wheeler,upload,upload_file,verified,verified_user,videocam,view_agenda,view_carousel,view_week,visibility,visibility_off,warning,watch,web,widgets,wifi,workspace_premium&amp;display=block">
+  <style id="splash-css">/* layar pembuka — tampil sebelum CSS utama dimuat */
+#splash{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:var(--sp-bg,#FFFBF7);color:#1c1917;font:500 14px/1.4 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;transition:opacity .4s ease,visibility .4s;padding:24px;text-align:center}
+html[data-theme=dark] #splash{background:#111110;color:#f5f5f4}
+html.warm #splash{display:none}
+#splash.out{opacity:0;visibility:hidden;pointer-events:none}
+html:not(.siap):not(.warm) body{overflow:hidden}
+#splash .sp-in{display:flex;flex-direction:column;align-items:center;gap:18px;width:min(260px,80vw)}
+#splash .sp-logo{width:88px;height:88px;border-radius:24px;object-fit:cover;box-shadow:0 10px 30px rgba(0,0,0,.12);animation:spP 1.6s ease-in-out infinite;background:#fff}
+#splash .sp-bar{width:100%;height:4px;border-radius:9px;background:rgba(127,127,127,.18);overflow:hidden;position:relative}
+#splash .sp-bar i{position:absolute;left:0;top:0;bottom:0;width:6%;border-radius:9px;background:var(--sp-ac,#E4572E);transition:width .35s ease}
+#splash .sp-bar:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);transform:translateX(-100%);animation:spS 1.2s linear infinite}
+#splash .sp-msg{margin:0;opacity:.75;min-height:20px}
+#splash .sp-msg.warn{opacity:1;color:#b45309}
+#splash.err .sp-msg{color:#b91c1c}
+#splash.err .sp-bar,#splash.err .sp-logo{animation:none;opacity:.5}
+#splash .sp-retry{border:0;border-radius:999px;padding:12px 26px;font:700 14px Inter,system-ui,sans-serif;background:#1c1917;color:#fff;cursor:pointer;min-height:44px}
+#splash .sp-retry[hidden]{display:none}
+@keyframes spP{50%{transform:scale(.94)}}@keyframes spS{to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){#splash .sp-logo,#splash .sp-bar:after{animation:none}}
+</style>
   <link rel="stylesheet" href="css/style.css">
   <script src="js/config.js"></script>
   <script>/* tampil seketika: pasang ikon, tema & tampilan terakhir (bila masih segar) lalu mulai ambil data sebelum halaman tergambar */
@@ -37,18 +57,20 @@ if(b){try{var q=function(r,h){if(!h)return;var e=document.querySelector('link[re
 var t='';try{t=JSON.parse(localStorage.getItem(L+'tema')||'""')}catch(e){}
 var dk=(t&&b.tt)?t==='gelap':(b.def==='gelap'||(b.def==='sistem'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches));
 d.setAttribute('data-theme',dk?'dark':'light');
-if(seg){if(b.css){var s=document.createElement('style');s.id='theme-vars';s.textContent=b.css;document.head.appendChild(s)}
+window.__spLogo=b.logo;if(b.bg)d.style.setProperty('--sp-bg',b.bg);if(b.ac)d.style.setProperty('--sp-ac',b.ac);
+if(seg){d.classList.add('warm');if(b.css){var s=document.createElement('style');s.id='theme-vars';s.textContent=b.css;document.head.appendChild(s)}
 if(b.nh)d.classList.add('no-header');if(b.nb)d.classList.add('no-bnav');
 if(b.hero){var l=document.createElement('link');l.rel='preload';l.as='image';l.href=b.hero;l.setAttribute('fetchpriority','high');document.head.appendChild(l)}}}catch(e){}}
 if(!seg)d.classList.add('boot');
 try{window.__accPub=fetch(U+(U.indexOf('?')>-1?'&':'?')+'action=public',{cache:'no-store',redirect:'follow'}).then(function(r){return r.text()}).then(JSON.parse).catch(function(){return null})}catch(e){}})();</script>
-  <script src="js/demo-data.js" defer></script>
   <script src="js/core.js" defer></script>
   <script src="js/qr.js" defer></script>
   <script src="js/public.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body class="pub">
+  <div id="splash" role="status" aria-live="polite"><div class="sp-in"><img class="sp-logo" src="assets/logo.png" alt="" width="88" height="88" fetchpriority="high"><div class="sp-bar"><i></i></div><p class="sp-msg">Memuat data...</p><button type="button" class="sp-retry" hidden>Coba Lagi</button></div></div>
+  <script>(function(){var l=window.__spLogo,i=document.querySelector('#splash .sp-logo');if(l&&i)i.src=l})()</script>
   <a class="sr" href="#app">Lewati ke konten</a>
   <header class="topbar">
     <div class="topbar-in">

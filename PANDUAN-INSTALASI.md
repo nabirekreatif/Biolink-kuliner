@@ -115,10 +115,19 @@ Bila yang tampil masih versi lama, tekan **Ctrl+Shift+R**.
 Dasbor dibuat seperti aplikasi, jadi semua pengaturan bisa diubah lewat HP:
 - **Navigasi bawah** (selalu tampil): **Beranda · Produk · Tampilan · Promo · Menu**. Admin outlet melihat Beranda · Produk · Akun · Menu.
 - **Menu** membuka semua menu dasbor dalam bentuk kotak (Pop-up, Rekening & QRIS, Cabang & Sosmed, Layanan, WhatsApp, CRM, Admin, Migrasi, Log, Lisensi, Keluar).
-- **Bilah atas** menampilkan judul halaman. Tombol **← (kembali)** muncul di setiap sub-halaman, dan ikon kanan atas membuka Link Bio.
+- **Bilah atas** menampilkan judul halaman. Tombol **← (kembali)** muncul di setiap sub-halaman, dan ikon kanan atas membuka halaman utama Link Bio (di Blogger: domain blog Anda, `/`).
 - **Tampilan** berisi 5 pilihan: Bagian Link Bio, Menu, Header & Navigasi, Warna & Tema, Teks & Label. Setelah selesai, ketuk ← untuk memilih pengaturan berikutnya.
 - **Lembar edit** tampil layar penuh. Judul dan tombol **X** ada di atas, **Batal/Simpan** menempel di bawah. Setelah Simpan, lembar tertutup dan daftar di belakangnya langsung diperbarui, jadi Anda bisa langsung mengedit yang lain tanpa memuat ulang browser.
 - Di komputer (layar ≥ 1024 px) dasbor tetap memakai menu samping.
+
+## 4d. Layar pembuka & kecepatan
+
+- **Pembukaan pertama** (atau data tersimpan sudah lebih dari 2 menit): layar pembuka penuh menampilkan logo usaha, bilah kemajuan, dan tulisan *Memuat data…*. Bilah bergerak sesuai tahapan yang benar-benar selesai: data dari server, lalu gambar di layar pertama dan huruf. Setelah semuanya siap, halaman tampil utuh dengan efek memudar, tanpa kedip dan tanpa data kosong.
+- **Dibuka ulang dalam 2 menit**: langsung tampil dari data tersimpan, tanpa layar pembuka. Pindah halaman juga tidak memunculkan loading lagi.
+- **Koneksi lambat**: setelah 6 detik muncul tulisan *Koneksi lambat, masih memuat data…*. Loading tidak berjalan tanpa batas: bila ada data tersimpan, data itu ditampilkan setelah ±10 detik, dan bila tidak ada, setelah ±25 detik muncul *Gagal memuat data* dengan tombol **Coba Lagi**.
+- **Dasbor**: layar pembuka tampil sampai sesi login diperiksa dan data dasbor siap. Bila belum login, langsung ke halaman masuk.
+- Logo dan warna di layar pembuka mengikuti pengaturan dasbor (setelah kunjungan pertama).
+- Lama data dianggap segar diatur lewat `CACHE_SEGAR_DETIK` (bawaan 120 detik).
 
 ## 4b. Atur SEMUA tampilan link bio (menu **Tampilan & Teks**)
 
@@ -294,6 +303,11 @@ Catatan Blogger:
 
 ## Update dari versi sebelumnya
 
+**Edisi Kuliner v9** (layar pembuka, perbaikan simpan produk, tautan "Lihat situs"):
+1. **Backend BERUBAH**: tempel ulang `Kode.gs` → **Deploy → Kelola deployment → Edit → Versi baru → Deploy** (URL tetap sama). Ini memperbaiki pesan *"Kategori harus salah satu dari: HP Baru, HP Second, Aksesoris"* saat menyimpan produk. Sekarang kategori yang dipilih di dasbor selalu diterima, dan kategori baru otomatis masuk daftar kategori.
+2. Timpa semua berkas frontend dengan isi ZIP baru (termasuk `nk-license.js` & `nk-license-blogger.js`), tetap pakai `js/config.js` lama → push.
+3. Blogger: pasang `tema-biolink.xml` baru (VERSI 9) → Simpan.
+
 **Edisi Kuliner v8** (dasbor ramah HP):
 1. Backend tidak berubah.
 2. Timpa semua berkas frontend dengan isi ZIP baru, termasuk `nk-license.js` dan `nk-license-blogger.js`. Tetap pakai `js/config.js` lama. Lalu `git add .` → `git commit -m "v8"` → `git push`.
@@ -339,6 +353,7 @@ Catatan Blogger:
 | Gambar gagal diunggah | Kebijakan Google Workspace melarang berbagi publik. Minta admin Workspace mengizinkan berbagi "Siapa saja yang memiliki link". |
 | WA tidak terkirim | Cek token dan status perangkat Fonnte (harus `connect`), lihat tab **Antrean**, lalu jalankan `pasangTrigger()`. |
 | Tampilan/data lama sempat muncul lalu berubah | Perbarui ke v7. Di Blogger: pasang `tema-biolink.xml` baru (tema lama memakai skrip awal versi lama) dan naikkan `VERSI`. |
+| Simpan produk gagal: "Kategori harus salah satu dari: HP Baru…" | Backend masih versi lama. Tempel `Kode.gs` v9 lalu Deploy → Versi baru. |
 | Tombol Install tidak muncul / tidak bereaksi | Perbarui ke v7. Chrome hanya menawarkan pemasangan bila manifest valid dan aplikasi belum terpasang; bila prompt tidak tersedia, tombol menampilkan petunjuk pemasangan manual. Coba di Chrome (bukan browser bawaan WhatsApp/Instagram). |
 | Di Blogger tampil teks polos / terkunci | `nk-license-blogger.js` belum ada di GitHub, atau `ASET` di tema salah. Buka URL berkas itu di browser, lalu naikkan `VERSI`. |
 | Warna/teks baru belum tampil | Tunggu ±1 menit atau muat ulang halaman. Pastikan backend sudah *Versi baru* v4. |

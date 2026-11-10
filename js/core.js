@@ -260,34 +260,93 @@
   };
   App.warmUp = function () { if (GAS_URL) fetch(GAS_URL + (GAS_URL.indexOf('?') > -1 ? '&' : '?') + 'ping=' + Date.now(), { mode: 'no-cors', cache: 'no-store' }).catch(() => { }); };
 
+  /* ---------------- layar pembuka (splash) + persiapan aplikasi ----------------
+   * Splash menutup layar sampai data penting + gambar di layar pertama siap, lalu memudar.
+   * Kunjungan ulang dengan cache masih segar (html.warm) tidak menampilkan splash sama sekali. */
+  const SP = { t0: Date.now(), pct: 0, timers: [], hidden: false };
+  const spEl = () => document.getElementById('splash');
+  App.splash = {
+    aktif: () => { const e = spEl(); return !!(e && !SP.hidden && !document.documentElement.classList.contains('warm')); },
+    step(p, msg) {   // kemajuan nyata (0–100) dari tahapan pemuatan
+      const e = spEl(); if (!e) return; SP.pct = Math.max(SP.pct, p);
+      const bar = e.querySelector('.sp-bar i'); if (bar) bar.style.width = SP.pct + '%';
+      if (msg) App.splash.msg(msg);
+    },
+    msg(t, warn) { const m = spEl() && spEl().querySelector('.sp-msg'); if (m) { m.textContent = t; m.classList.toggle('warn', !!warn); } },
+    lambat() {       // status koneksi lambat — loading tetap dipertahankan, tidak tanpa batas
+      SP.timers.forEach(clearTimeout); SP.timers = [];
+      SP.timers.push(setTimeout(() => App.splash.aktif() && App.splash.msg('Koneksi lambat, masih memuat data…', 1), 6000));
+      SP.timers.push(setTimeout(() => App.splash.aktif() && App.splash.msg('Masih menghubungi server, mohon tunggu…', 1), 14000));
+    },
+    gagal(msg, retry) {
+      const e = spEl(); if (!e) return; SP.timers.forEach(clearTimeout);
+      e.classList.add('err'); App.splash.msg(msg || 'Gagal memuat data.', 1);
+      const b = e.querySelector('.sp-retry'); if (b) { b.hidden = false; b.onclick = () => { b.hidden = true; e.classList.remove('err'); SP.pct = 0; App.splash.step(8, 'Memuat data…'); App.splash.lambat(); retry && retry(); }; }
+    },
+    // tunggu gambar penting di layar pertama + font (maks. ms), lalu pudarkan splash
+    async selesai(maks) {
+      if (SP.hidden) return; SP.timers.forEach(clearTimeout);
+      const e = spEl();
+      if (e && !document.documentElement.classList.contains('warm')) {
+        App.splash.step(80, 'Menyiapkan tampilan…');
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const vh = innerHeight || 800;
+        const imgs = $$('#app img, .topbar img').filter(i => { const r = i.getBoundingClientRect(); return r.width && r.top < vh && r.bottom > 0 && i.src; }).slice(0, 10);
+        const muat = i => i.complete ? (i.decode ? i.decode().catch(() => { }) : null) : new Promise(r => { i.addEventListener('load', r, { once: true }); i.addEventListener('error', r, { once: true }); });
+        const tugas = imgs.map(muat).concat([document.fonts && document.fonts.ready ? document.fonts.ready.catch(() => { }) : null]).filter(Boolean);
+        let n = 0; tugas.forEach(p => Promise.resolve(p).then(() => App.splash.step(80 + Math.round(18 * (++n) / tugas.length))));
+        await Promise.race([Promise.all(tugas), new Promise(r => setTimeout(r, maks || 3500))]);
+        App.splash.step(100);
+      }
+      App.splash.hide();
+    },
+    hide() {
+      if (SP.hidden) return; SP.hidden = true; SP.timers.forEach(clearTimeout);
+      const d = document.documentElement, e = spEl(); d.classList.add('siap');
+      if (e) { e.classList.add('out'); setTimeout(() => e.remove(), 450); }
+      App.emit('siap');
+    }
+  };
+
   /* ---------------- data publik: SWR (tampil seketika dari cache) ---------------- */
   const CACHE_SEGAR = (CFG.CACHE_SEGAR_DETIK != null && CFG.CACHE_SEGAR_DETIK !== '' ? Number(CFG.CACHE_SEGAR_DETIK) || 0 : 120) * 1000;   // 0 = selalu tunggu data terbaru
+  const tunggu = (p, ms) => Promise.race([p, new Promise(ok => setTimeout(() => ok('lambat'), ms))]);
   App.loadPublic = async function (force) {
-    if (!GAS_URL) { setPub(window.ACC_DEMO, true); return; }
+    if (!GAS_URL) {   // mode demo: data contoh dimuat sesuai kebutuhan (tidak membebani situs yang sudah terhubung)
+      if (!window.ACC_DEMO) await new Promise(r => { const s = document.createElement('script'); s.src = App.base + 'js/demo-data.js'; s.onload = s.onerror = r; document.head.appendChild(s); });
+      setPub(window.ACC_DEMO, true); App.pubFresh = true; if (App.mode !== 'admin') App.splash.selesai(); return;
+    }
     const c = Store.get('pub', null);
     const fresh = (Number(CFG.FRESH_DETIK) || 60) * 1000, recent = c && Date.now() - c.t < CACHE_SEGAR;
     const early = window.__accPub; window.__accPub = null;          // permintaan yang sudah dimulai di <head>
-    // cache masih segar → tampil seketika; cache lama → tunggu data terbaru (maks. 3 dtk) agar hasil edit dasbor langsung tampil
+    const splash = App.mode !== 'admin' && !App.pub && App.splash.aktif();
+    // cache masih segar → tampil seketika (tanpa splash); selain itu splash menunggu data terbaru
     if (c && !App.pub && recent) setPub(c.data, true);
     if (!early && c && !force && Date.now() - c.t < fresh) { App.pubFresh = true; return; }
+    if (splash) { App.splash.step(15, 'Memuat data…'); App.splash.lambat(); }
     let r = null;
     if (early) {
-      if (c && !App.pub) { r = await Promise.race([early, new Promise(ok => setTimeout(() => ok('lambat'), 3000))]);
-        if (r === 'lambat') { setPub(c.data, true); r = await early; } }
-      else r = await early;
+      // ada data tersimpan → tunggu maks. 10 dtk lalu pakai data tersimpan; tanpa data → maks. 25 dtk
+      r = await tunggu(early, c && !App.pub ? 10000 : 25000);
+      if (r === 'lambat') { if (c && !App.pub) { setPub(c.data, true); if (splash) App.splash.selesai(1500); A_toast('Koneksi lambat — menampilkan data tersimpan.'); early.then(x => x && x.success && terima(x, c)); return; } r = null; }
     }
-    if (!r || !r.success) r = await App.getPublic();
-    if (r && r.success) {
-      const h = hashStr(JSON.stringify(r.data));
-      Store.set('pub', { t: Date.now(), h, data: r.data });
-      App.pubFresh = true;
-      if (!c || c.h !== h || !App.pub) setPub(r.data, false); else document.dispatchEvent(new CustomEvent('acc:fresh'));
-    } else if (!App.pub && c) setPub(c.data, true);                 // server gagal → pakai data terakhir
+    if (!r || !r.success) { if (splash) App.splash.step(30); r = await App.getPublic(); }
+    if (r && r.success) { terima(r, c); if (splash) App.splash.selesai(); }
+    else if (!App.pub && c) { setPub(c.data, true); if (splash) App.splash.selesai(1500); A_toast('Gagal terhubung — menampilkan data tersimpan.'); }  // server gagal → data terakhir
     else if (!App.pub) {
       App.pubError = r && r.message || 'Gagal memuat data';
-      App.rerender();
+      if (splash) App.splash.gagal('Gagal memuat data. Periksa koneksi internet Anda.', () => App.loadPublic(true));
+      else App.rerender();
     }
   };
+  const A_toast = m => setTimeout(() => App.toast && App.toast(m), 500);
+  function terima(r, c) {
+    const h = hashStr(JSON.stringify(r.data));
+    Store.set('pub', { t: Date.now(), h, data: r.data });
+    App.pubFresh = true;
+    if (App.splash.aktif()) App.splash.step(70, 'Menyiapkan tampilan…');
+    if (!c || c.h !== h || !App.pub) setPub(r.data, false); else document.dispatchEvent(new CustomEvent('acc:fresh'));
+  }
   function setPub(d, fromCache) {
     const first = !App.pub, chrome0 = chromeKey();
     App.pub = d; App.pubError = '';
@@ -319,7 +378,7 @@
       const st = document.getElementById('theme-vars'), b0 = (App.pub.banners || [])[0];
       const ob = Store.get('boot', null) || {};
       Store.set('boot', { t: Date.now(), mj: ob.mj, ati: ob.ati, fav: ob.fav, css: st ? st.textContent : '', def: App.T('tema_bawaan'), tt: App.on_('tombol_tema') ? 1 : 0, nh: App.on_('header_tampil') ? 0 : 1, nb: App.on_('navbawah_tampil') ? 0 : 1,
-        hero: b0 && (App.pub.sections || []).some(x => x.id === 'hero' && x.tampil !== false) ? img(b0.gambar_url, heroW()) : '' });
+        hero: b0 && (App.pub.sections || []).some(x => x.id === 'hero' && x.tampil !== false) ? img(b0.gambar_url, heroW()) : '', logo: App.pub.settings && App.pub.settings.logo_url ? img(App.pub.settings.logo_url, 300) : '', bg: getComputedStyle(document.body).backgroundColor, ac: App.T('warna_aksen') || '' });
     } catch (e) { }
   }
   const heroW = App.heroW = () => (window.innerWidth || 400) > 600 ? 960 : 720;
@@ -576,7 +635,7 @@
   /* ---------------- mulai ---------------- */
   App.start = function () {
     const c0 = Store.get('pub', null);
-    if (App.mode !== 'admin' && GAS_URL && c0 && c0.data && !App.pub && Date.now() - c0.t < CACHE_SEGAR) { App.pub = c0.data; document.documentElement.classList.remove('boot'); }
+    if (App.mode !== 'admin' && GAS_URL && c0 && c0.data && !App.pub && Date.now() - c0.t < CACHE_SEGAR) { App.pub = c0.data; document.documentElement.classList.remove('boot'); App.splash.hide(); }
     App.setTheme(); App.applyChrome();
     document.addEventListener('click', e => { if (e.target.closest('[data-theme-toggle]')) { App.setTheme(App.theme() === 'gelap' ? 'terang' : 'gelap'); } });
     if (window.matchMedia) { const mq = matchMedia('(prefers-color-scheme: dark)'); if (mq.addEventListener) mq.addEventListener('change', () => App.setTheme()); }

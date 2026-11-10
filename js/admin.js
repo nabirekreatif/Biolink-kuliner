@@ -64,6 +64,8 @@
     ? [['beranda', 'Beranda', 'space_dashboard'], ['produk', 'Produk', 'restaurant_menu'], ['tampilan', 'Tampilan', 'palette'], ['banner', 'Promo', 'view_carousel'], ['menu', 'Menu', 'apps']]
     : [['beranda', 'Beranda', 'space_dashboard'], ['produk', 'Produk', 'restaurant_menu'], ['akun', 'Akun', 'person'], ['menu', 'Menu', 'apps']];
   const TAMP_TABS = [['bagian', 'Bagian Link Bio', 'view_agenda', 'Urutan, saklar & isi tiap bagian'], ['menu', 'Menu', 'apps', 'Tombol menu, ikon & tautan'], ['header', 'Header & Navigasi', 'bottom_navigation', 'Tombol header & navigasi bawah'], ['warna', 'Warna & Tema', 'palette', 'Warna, mode gelap & gaya kartu'], ['teks', 'Teks & Label', 'text_fields', 'Semua teks, label & tombol']];
+  // alamat halaman utama Link Bio: di Blogger = "/" (domain blog), di GitHub Pages = folder aplikasi
+  const SITUS = () => window.ACC_BASE != null ? '/' : (A.base || './');
   const isHP = () => !(window.matchMedia && matchMedia('(min-width: 1024px)').matches);
   // halaman induk untuk tombol Kembali (← ) di HP
   const parentOf = (v, sub) => sub ? v : (BNAV().some(b => b[0] === v) ? '' : 'menu');
@@ -78,15 +80,20 @@
   });
 
   function render(e, sub) {
-    if (A.demo) return renderSetup(e);
-    if (!A.token || !A.user) { shellBuilt = false; document.body.classList.remove('adm-shell'); return renderLogin(e); }
-    if (A.mustChange) { shellBuilt = false; document.body.classList.remove('adm-shell'); return renderMustChange(e); }
+    if (A.demo) { A.splash.hide(); return renderSetup(e); }
+    if (!A.token || !A.user) { shellBuilt = false; document.body.classList.remove('adm-shell'); A.splash.selesai(800); return renderLogin(e); }
+    if (A.mustChange) { shellBuilt = false; document.body.classList.remove('adm-shell'); A.splash.selesai(800); return renderMustChange(e); }
     const sp = String(sub || '').split('/');
     view = allowed(sp[0]) ? sp[0] : 'beranda'; view2 = view === sp[0] ? (sp[1] || '') : '';
     if (!shellBuilt) buildShell(e);
     if (!A.admin) { const c = Store.get(bootKey(), null); if (c) A.admin = c.data; }   // tampil seketika dari cache perangkat
     show(view);
-    loadBoot();
+    if (A.admin) A.splash.selesai(1500);
+    else { A.splash.step(20, 'Memeriksa sesi & memuat dasbor…'); A.splash.lambat(); }
+    loadBoot().then(okk => {
+      if (okk || A.admin) return A.splash.selesai(1500);
+      if (A.token && A.user) A.splash.gagal('Gagal memuat dasbor. Periksa koneksi internet Anda.', () => { loadBoot(true).then(x => x ? A.splash.selesai() : A.splash.gagal('Masih gagal memuat. Coba lagi sebentar.', () => render(el, view))); });
+    });
   }
 
   /* ---------------- belum terhubung (mode demo) ---------------- */
@@ -139,11 +146,11 @@
     const bn = BNAV();
     e.innerHTML = '<div class="adm"><nav class="side" aria-label="Menu dasbor"><div class="row" style="padding:4px 10px 12px"><span class="avatar-i">' + esc((A.user.nama || 'A').slice(0, 1).toUpperCase()) + '</span><div class="grow"><b class="ell" style="display:block;font:700 14px var(--f-head)">' + esc(A.user.nama) + '</b><span class="muted tiny">' + (isSA() ? 'Superadmin' : 'Admin ' + cabNama(A.user.cabang)) + '</span></div></div>' +
       items.map(m => m.g ? '<div class="grp">' + esc(m.g) + '</div>' : '<a href="#/' + m.id + '" data-v="' + m.id + '">' + I(m.i) + esc(m.t) + '</a>').join('') +
-      '<div class="grp">Lainnya</div><button data-nk-license>' + I('key') + 'Lisensi</button><a href="' + A.base + '" target="_blank">' + I('open_in_new') + 'Lihat Link Bio</a><button data-logout>' + I('logout') + 'Keluar</button></nav>' +
+      '<div class="grp">Lainnya</div><button data-nk-license>' + I('key') + 'Lisensi</button><a href="' + SITUS() + '" target="_blank">' + I('open_in_new') + 'Lihat Link Bio</a><button data-logout>' + I('logout') + 'Keluar</button></nav>' +
       '<div class="adm-col">' +
       // bilah atas ala aplikasi (HP): kembali · judul · lihat situs
       '<header class="adm-bar"><a class="adm-ic" data-back href="#/" aria-label="Kembali">' + I('arrow_back') + '</a><span class="avatar-i adm-av" aria-hidden="true">' + esc((A.user.nama || 'A').slice(0, 1).toUpperCase()) + '</span>' +
-      '<b class="adm-ttl ell" data-ttl>Dasbor</b><a class="adm-ic" href="' + A.base + '" target="_blank" aria-label="Lihat Link Bio">' + I('open_in_new') + '</a></header>' +
+      '<b class="adm-ttl ell" data-ttl>Dasbor</b><a class="adm-ic" href="' + SITUS() + '" target="_blank" aria-label="Lihat Link Bio">' + I('open_in_new') + '</a></header>' +
       '<div class="adm-main" data-main></div></div></div>' +
       '<nav class="bnav adm-bnav" aria-label="Navigasi dasbor" style="--n:' + bn.length + '"><div class="bnav-in">' +
       bn.map(x => '<a href="#/' + x[0] + '" data-v="' + x[0] + '">' + I(x[2]) + '<span>' + x[1] + '</span></a>').join('') + '</div></nav>';
@@ -178,7 +185,7 @@
     const DESK = { beranda: 'Ringkasan & statistik', produk: 'Tambah, edit, stok & harga', tampilan: 'Bagian, menu, warna & teks', banner: 'Foto promo bergeser', popup: 'Gambar pop-up saat dibuka', bayar: 'Rekening & QRIS', cabang: 'Outlet, WA & sosmed', layanan: 'Halaman layanan', notif: 'Blast & notifikasi WA', crm: 'Data kontak pelanggan', pengguna: 'Akun admin outlet', migrasi: 'Impor data lama', log: 'Riwayat perubahan', akun: 'Profil & ganti sandi' };
     m.innerHTML = '<div class="adm-me"><span class="avatar-i">' + esc((A.user.nama || 'A').slice(0, 1).toUpperCase()) + '</span><div class="grow"><b class="ell">' + esc(A.user.nama) + '</b><span class="muted tiny">' + (isSA() ? 'Superadmin' : 'Admin ' + cabNama(A.user.cabang)) + '</span></div><a class="btn btn-ghost btn-sm" href="#/akun">' + I('person') + 'Akun</a></div>' +
       groups.filter(g => g.it.length).map(g => '<div class="adm-grp">' + esc(g.g) + '</div><div class="adm-tiles">' + g.it.map(x => '<a href="#/' + x.id + '">' + I(x.i) + '<b>' + esc(x.t) + '</b><small>' + esc(DESK[x.id] || '') + '</small></a>').join('') + '</div>').join('') +
-      '<div class="adm-grp">Lainnya</div><div class="adm-tiles"><a href="' + A.base + '" target="_blank">' + I('open_in_new') + '<b>Lihat Link Bio</b><small>Buka halaman publik</small></a><button data-nk-license>' + I('key') + '<b>Lisensi</b><small>Aktivasi template</small></button>' +
+      '<div class="adm-grp">Lainnya</div><div class="adm-tiles"><a href="' + SITUS() + '" target="_blank">' + I('open_in_new') + '<b>Lihat Link Bio</b><small>Buka halaman publik</small></a><button data-nk-license>' + I('key') + '<b>Lisensi</b><small>Aktivasi template</small></button>' +
       '<button data-lo class="danger">' + I('logout') + '<b>Keluar</b><small>Akhiri sesi</small></button></div>';
     m.querySelector('[data-lo]').onclick = async () => { if (await A.confirm('Keluar dari dasbor?', 'Keluar')) logout('Anda telah keluar.'); };
   };
@@ -442,10 +449,10 @@
     if (TT.includes(sub)) tampTab = sub;
     if (isHP() && !sub) {   // HP: daftar pilihan dulu, lalu buka sub-halaman (ada tombol kembali)
       m.innerHTML = head('Tampilan Link Bio') + '<div class="adm-tiles one">' + TAMP_TABS.map(t => '<a href="#/tampilan/' + t[0] + '" data-t="' + t[0] + '">' + I(t[2]) + '<b>' + esc(t[1]) + '</b><small>' + esc(t[3]) + '</small>' + I('chevron_right') + '</a>').join('') + '</div>' +
-        '<a class="btn btn-ghost btn-block mt16" href="' + A.base + '" target="_blank">' + I('open_in_new') + 'Lihat hasilnya di Link Bio</a>';
+        '<a class="btn btn-ghost btn-block mt16" href="' + SITUS() + '" target="_blank">' + I('open_in_new') + 'Lihat hasilnya di Link Bio</a>';
       return;
     }
-    m.innerHTML = head(isHP() ? (TAMP_TABS.find(t => t[0] === tampTab) || [])[1] || 'Tampilan' : 'Tampilan Link Bio', '<a class="btn btn-ghost btn-sm" href="' + A.base + '" target="_blank">' + I('open_in_new') + 'Lihat Link Bio</a>') +
+    m.innerHTML = head(isHP() ? (TAMP_TABS.find(t => t[0] === tampTab) || [])[1] || 'Tampilan' : 'Tampilan Link Bio', '<a class="btn btn-ghost btn-sm" href="' + SITUS() + '" target="_blank">' + I('open_in_new') + 'Lihat Link Bio</a>') +
       '<div class="tabs tamp-tabs" role="tablist">' + TAMP_TABS.map(t => '<button data-t="' + t[0] + '"' + (t[0] === tampTab ? ' class="on"' : '') + '>' + t[1] + '</button>').join('') + '</div><div data-tb></div>';
     m.querySelector('.tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; tampTab = b.dataset.t; m.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); try { history.replaceState(null, '', '#/tampilan/' + tampTab); } catch (er) { } view2 = tampTab; tab(); };
     const tab = () => { const box = m.querySelector('[data-tb]'); ({ bagian: tabBagian, menu: tabMenu, header: tabHeader, warna: tabWarna, teks: tabTeks })[tampTab](box); };
